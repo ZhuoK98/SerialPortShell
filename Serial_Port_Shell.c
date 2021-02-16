@@ -184,27 +184,27 @@ bool ConfigureSerialPort(void)
     SerialPortDCB.DCBlength       = sizeof(SerialPortDCB);
     SerialPortDCB.BaudRate        = SerialPort.BaudRate;
     SerialPortDCB.Parity          = SerialPort.Parity;
-	SerialPortDCB.fParity         = 0;
-	SerialPortDCB.StopBits        = SerialPort.StopBits;
-	SerialPortDCB.ByteSize        = SerialPort.DataBits;
-	SerialPortDCB.fOutxCtsFlow    = 0;
-	SerialPortDCB.fOutxDsrFlow    = 0;
-	SerialPortDCB.fDtrControl     = DTR_CONTROL_DISABLE;
-	SerialPortDCB.fDsrSensitivity = 0;
-	SerialPortDCB.fRtsControl     = RTS_CONTROL_DISABLE;
-	SerialPortDCB.fOutX           = 0;
-	SerialPortDCB.fInX            = 0;
-	/* ----------------- misc parameters ----- */
-	SerialPortDCB.fErrorChar      = 0;
-	SerialPortDCB.fBinary         = 1;
-	SerialPortDCB.fNull           = 0;
-	SerialPortDCB.fAbortOnError   = 0;
-	SerialPortDCB.wReserved       = 0;
-	SerialPortDCB.XonLim          = 2;
-	SerialPortDCB.XoffLim         = 4;
-	SerialPortDCB.XonChar         = 0x13;
-	SerialPortDCB.XoffChar        = 0x19;
-	SerialPortDCB.EvtChar         = 0;
+    SerialPortDCB.fParity         = 0;
+    SerialPortDCB.StopBits        = SerialPort.StopBits;
+    SerialPortDCB.ByteSize        = SerialPort.DataBits;
+    SerialPortDCB.fOutxCtsFlow    = 0;
+    SerialPortDCB.fOutxDsrFlow    = 0;
+    SerialPortDCB.fDtrControl     = DTR_CONTROL_DISABLE;
+    SerialPortDCB.fDsrSensitivity = 0;
+    SerialPortDCB.fRtsControl     = RTS_CONTROL_DISABLE;
+    SerialPortDCB.fOutX           = 0;
+    SerialPortDCB.fInX            = 0;
+    /* ----------------- misc parameters ----- */
+    SerialPortDCB.fErrorChar      = 0;
+    SerialPortDCB.fBinary         = 1;
+    SerialPortDCB.fNull           = 0;
+    SerialPortDCB.fAbortOnError   = 0;
+    SerialPortDCB.wReserved       = 0;
+    SerialPortDCB.XonLim          = 2;
+    SerialPortDCB.XoffLim         = 4;
+    SerialPortDCB.XonChar         = 0x13;
+    SerialPortDCB.XoffChar        = 0x19;
+    SerialPortDCB.EvtChar         = 0;
     if(!SetCommState(SerialPortHandler,&SerialPortDCB)) {
         return false;
     }
