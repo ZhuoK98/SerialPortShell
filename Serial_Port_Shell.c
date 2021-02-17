@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <tchar.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <conio.h>
 
 #define MAXNumOfSerialPort 10
 #define MAXDeviceNameLen 6
@@ -16,9 +18,11 @@ HANDLE StdInHandler;
 HANDLE StdOutHandler;
 OVERLAPPED SerialPortReadOverlapped = {0};
 OVERLAPPED SerialPortWriteOverlapped = {0};
+DWORD DefaultStdInMode;
+DWORD DefaultStdOutMode;
 
 bool SerialPortNameflag = false;
-
+bool Restartflag = false;
 struct SerialPortsListItem
 {
     char DeviceName[MAXDeviceNameLen];
@@ -129,6 +133,7 @@ bool GetSerialPortsInfoFromKey()
 	char* DeviceName = malloc(sizeof(char)*maxValueLen);
 	char* InterfaceName = malloc(sizeof(char)*maxValueNameLen);
     //遍历串口，登记串口号和接口名
+    SerialPortsList.TheNumOfSerialPort = 0;
     for (DWORD idx = 0; idx < numValues; idx++) {
 		DWORD ValueNameLen = maxValueNameLen;
 		DWORD ValueLen = maxValueLen;
@@ -246,25 +251,34 @@ DWORD WINAPI ReceiveChar(_In_ LPVOID lpParameter)
 			WriteFile(StdOutHandler, &buf, nBytesRead, &lpNumberOfBytesWritten,NULL);
 		}
     }
-    CloseHandle(SerialPortReadOverlapped.hEvent);
     return 0;
 }
 
 void WriteChar(void) 
 {
-    char Data;
+    char Data[4];
     DWORD DataLen;
     DWORD nBytesWritten;
     for (;;) {
-        ReadConsole(StdInHandler, &Data, 1, &DataLen, NULL);
+        ReadConsole(StdInHandler, Data, 4, &DataLen, NULL);
+        if ((Data[0] == 3) || (Data[0] == 4)) {
+            break;
+        } else if (Data[0] == 18) {
+            Restartflag = true;
+            break;
+        }
         ResetEvent(SerialPortWriteOverlapped.hEvent);
-        if (!WriteFile(SerialPortHandler, &Data, 1, &nBytesWritten, &SerialPortWriteOverlapped)) {
+        if (!WriteFile(SerialPortHandler, Data, DataLen, &nBytesWritten, &SerialPortWriteOverlapped)) {
 			if (GetLastError() == ERROR_IO_PENDING) {
 				if (!GetOverlappedResult(SerialPortHandler, &SerialPortWriteOverlapped, &nBytesWritten, TRUE)) {
 					break;
 				}
 			}
 		}
+        if (nBytesWritten == 0) {
+            printf("Send data to serial port error, the serial port detached?\n");
+            break;
+        }
     }
     CloseHandle(SerialPortWriteOverlapped.hEvent);
 }
@@ -274,15 +288,25 @@ void ConfigureConsole(void)
     DWORD mode;
     StdInHandler = GetStdHandle(STD_INPUT_HANDLE);
     GetConsoleMode(StdInHandler, &mode);
+    DefaultStdInMode = mode;
 	mode &= ~ENABLE_PROCESSED_INPUT;
 	mode &= ~ENABLE_LINE_INPUT;
 	mode |= 0x0200;
 	SetConsoleMode(StdInHandler, mode);
-
+    
     StdOutHandler = GetStdHandle(STD_OUTPUT_HANDLE);
 	GetConsoleMode(StdOutHandler, &mode);
+    DefaultStdOutMode = mode;
 	mode |= 0x0004;
 	SetConsoleMode(StdOutHandler, mode);
+}
+
+void ConsoleReInit(void) 
+{
+    StdInHandler = GetStdHandle(STD_INPUT_HANDLE);
+    SetConsoleMode(StdInHandler, DefaultStdInMode);
+    StdOutHandler = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleMode(StdOutHandler, DefaultStdOutMode);
 }
 
 int main(int argc, char *argv[])
@@ -291,6 +315,7 @@ int main(int argc, char *argv[])
         printf("There are errors with parameters!\n");
         return -1;
     }
+    restart:
     if (!GetSerialPortsInfoFromKey()) {
         printf("Error to Get Serial Ports List\n");
         return -2;
@@ -334,8 +359,15 @@ int main(int argc, char *argv[])
     SerialPort.BaudRate,ParityStr[SerialPort.Parity],SerialPort.DataBits,StopBitsStr[SerialPort.StopBits]);
     WriteChar();
     CancelIo(SerialPortHandler);
-    WaitForSingleObject(SerialPortWriteHandler, INFINITE);
+    CloseHandle(SerialPortReadOverlapped.hEvent);
+    //WaitForSingleObject(SerialPortWriteHandler, INFINITE);
     CloseHandle(SerialPortHandler);
     CloseHandle(SerialPortWriteHandler);
+    ConsoleReInit();
+    if (Restartflag) {
+        Restartflag = false;
+        printf("\nSerial Port Restart:\n");
+        goto restart;
+    }
     return 0;
 }
