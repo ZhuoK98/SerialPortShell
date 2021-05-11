@@ -88,7 +88,7 @@ bool CheckParameters(int argc, char *argv[])
                 SerialPort.DataBits = atoi(&argv[i][3]);
             } else if (strstr(argv[i],"-S=") != NULL) {
                 int j;
-                for (int j=0; j<3; j++) {
+                for (j=0; j<3; j++) {
                     if (!strcmp(&argv[i][3],StopBitsStr[j])) {
                         SerialPort.StopBits = j;
                         break;
@@ -137,7 +137,7 @@ bool GetSerialPortsInfoFromKey()
     for (DWORD idx = 0; idx < numValues; idx++) {
 		DWORD ValueNameLen = maxValueNameLen;
 		DWORD ValueLen = maxValueLen;
-		status = RegEnumValue(hKey, idx, InterfaceName, &ValueNameLen, NULL, NULL, DeviceName, &ValueLen);
+		status = RegEnumValue(hKey, idx, InterfaceName, &ValueNameLen, NULL, NULL, (LPBYTE)DeviceName, &ValueLen);
 		if (status == ERROR_SUCCESS) {
             strcpy(SerialPortsList.SerialPorts[idx].DeviceName,DeviceName);
             strcpy(SerialPortsList.SerialPorts[idx].InterfaceName,InterfaceName);
@@ -276,7 +276,7 @@ void WriteChar(void)
 			}
 		}
         if (nBytesWritten == 0) {
-            printf("Send data to serial port error, the serial port detached?\n");
+            printf("\nSend data to serial port error, the serial port detached?\n");
             break;
         }
     }
