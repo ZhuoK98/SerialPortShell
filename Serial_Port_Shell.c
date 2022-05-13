@@ -23,6 +23,7 @@ DWORD DefaultStdOutMode;
 
 bool SerialPortNameflag = false;
 bool Restartflag = false;
+bool OnlyPrintSerialPortList = false;
 struct SerialPortsListItem
 {
     char DeviceName[MAXDeviceNameLen];
@@ -67,6 +68,10 @@ struct SerialPortToOpen SerialPort = {{"",""},115200,NoParity,8,StopBits_1};
 
 bool CheckParameters(int argc, char *argv[]) 
 {
+    if (argc == 2 && !stricmp(argv[1], "getportlist")) {
+        OnlyPrintSerialPortList = true;
+        return true;
+    }
     if (argc > 6) {
         return false;
     } else {
@@ -323,10 +328,17 @@ int main(int argc, char *argv[])
     if (SerialPortsList.TheNumOfSerialPort == 0) {
         printf("No Serial Port Exist!\n");
         return -3;
-    } else if (SerialPortsList.TheNumOfSerialPort > 1 && !SerialPortNameflag) {
-        printf("There are more than one Serial Ports:\n");
+    } 
+    if (OnlyPrintSerialPortList) {
         for (int i=0; i<SerialPortsList.TheNumOfSerialPort; i++) {
             printf("%s\t",SerialPortsList.SerialPorts[i].DeviceName);
+        }
+        return 0;
+    }
+    if (SerialPortsList.TheNumOfSerialPort > 1 && !SerialPortNameflag) {
+        printf("There are more than one Serial Ports:\n");
+        for (int i=0; i<SerialPortsList.TheNumOfSerialPort; i++) {
+            printf("%s ",SerialPortsList.SerialPorts[i].DeviceName);
         }
         printf("\nPlease choose one:");
         scanf("%s",SerialPort.SerialPort.DeviceName);
